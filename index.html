@@ -3,36 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>시간제근무 기간제교사 인건비 산정</title>
+    <title>시간제근무기간제교사 인건비 산정</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.css" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', -apple-system, sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;800&display=swap');
+        body { font-family: 'Pretendard', -apple-system, sans-serif; letter-spacing: -0.025em; }
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
     </style>
 </head>
-<body>
+<body class="bg-slate-50">
     <div id="root"></div>
 
     <script type="text/babel">
-        // Lucide 아이콘 프록시 설정
         const { 
             Calculator, Calendar, CreditCard, AlertCircle, ChevronDown, 
             Table, Info, Download, ClipboardList, User, CalendarRange, 
             Settings2, ReceiptText, Save, FileUp, FileSpreadsheet, Mail
         } = typeof lucide !== 'undefined' ? lucide : {};
 
-        // 아이콘 컴포넌트 래퍼
         const Icon = ({ name: IconComp, size = 20, className = "" }) => {
             return IconComp ? <IconComp size={size} className={className} /> : null;
         };
 
         const App = () => {
-            const fileInputRef = React.useRef(null);
-
             const salaryTable = {
                 1: 2041500, 2: 2103300, 3: 2166000, 4: 2228500, 5: 2291500, 6: 2354400, 7: 2416600,
                 8: 2478600, 9: 2495600, 10: 2516700, 11: 2538300, 12: 2585900, 13: 2657500, 14: 2773700,
@@ -60,11 +57,6 @@
             const [results, setResults] = React.useState([]);
             const [detailedLogs, setDetailedLogs] = React.useState([]);
 
-            const handleHobongChange = (h) => {
-                const s = salaryTable[h] || 2773700;
-                setBaseInfo({ ...baseInfo, hobong: h, salary: s });
-            };
-
             const getDaysInMonth = (year, month) => new Date(year, month, 0).getDate();
 
             const isEightHourDay = (dateStr) => {
@@ -74,14 +66,14 @@
                 const sEnd = new Date(dates.summerEnd);
                 const wStart = new Date(dates.winterStart);
                 const wEnd = new Date(dates.winterEnd);
-                const isInSummer = d >= sStart && d <= sEnd;
-                const isInWinter = d >= wStart && d <= wEnd;
                 
                 const snStart = dates.summerNonOpStart ? new Date(dates.summerNonOpStart) : null;
                 const snEnd = dates.summerNonOpEnd ? new Date(dates.summerNonOpEnd) : null;
                 const wnStart = dates.winterNonOpStart ? new Date(dates.winterNonOpStart) : null;
                 const wnEnd = dates.winterNonOpEnd ? new Date(dates.winterNonOpEnd) : null;
                 
+                const isInSummer = d >= sStart && d <= sEnd;
+                const isInWinter = d >= wStart && d <= wEnd;
                 const isSummerNonOp = snStart && snEnd && d >= snStart && d <= snEnd;
                 const isWinterNonOp = wnStart && wnEnd && d >= wnStart && d <= wnEnd;
                 
@@ -93,7 +85,7 @@
                 return dateStr === dates.extraHoliday1 || dateStr === dates.extraHoliday2;
             };
 
-            const calculateQuarterly = () => {
+            const calculate = () => {
                 const quarters = [
                     { id: 1, name: '1분기', months: [3, 4, 5], year: 2026 },
                     { id: 2, name: '2분기', months: [6, 7, 8], year: 2026 },
@@ -113,6 +105,7 @@
                             else if (isZeroHourDay(cur)) noWorkDays++;
                         }
                         const halfWorkDays = daysInMonth - fullWorkDays - noWorkDays;
+                        
                         const mBasic = (baseInfo.salary / daysInMonth * fullWorkDays * 1.0) + (baseInfo.salary / daysInMonth * halfWorkDays * 0.5);
                         const mTeaching = (baseInfo.teachingAllowance / daysInMonth * fullWorkDays * 1.0) + (baseInfo.teachingAllowance / daysInMonth * halfWorkDays * 0.5);
                         const mResearch = (baseInfo.researchAllowance / daysInMonth * fullWorkDays * 1.0) + (baseInfo.researchAllowance / daysInMonth * halfWorkDays * 0.5);
@@ -128,8 +121,11 @@
                         const mNetPay = mTotalPreTax - mPersonalIns - mTax;
 
                         logs.push({
-                            month: `${year}.${m}`, fullWorkDays, halfWorkDays, noWorkDays, totalDays: daysInMonth,
-                            mBasic, mTeaching, mResearch, mJeonggeun, mJeonggeunAdd: mJeonggeunAddBase, mHoliday, mTotalPreTax, mNetPay
+                            month: `${year}.${m}`, 
+                            fullWorkDays, halfWorkDays, noWorkDays, totalDays: daysInMonth,
+                            mBasic, mTeaching, mResearch, mJeonggeun, mJeonggeunAdd: mJeonggeunAddBase, mHoliday, 
+                            mTotalPreTax, mNetPay,
+                            calcDetail: `(${baseInfo.salary.toLocaleString()} / ${daysInMonth}일) × (${fullWorkDays}일×1.0 + ${halfWorkDays}일×0.5)`
                         });
                         qData.basic += mBasic; qData.teaching += mTeaching; qData.research += mResearch; qData.jeonggeunAdd += mJeonggeunAddBase;
                         qData.meal += baseInfo.mealAllowance; qData.jeonggeun += mJeonggeun; qData.holiday += mHoliday;
@@ -143,18 +139,19 @@
                 setDetailedLogs(logs);
             };
 
-            React.useEffect(() => { calculateQuarterly(); }, [dates, baseInfo, userInfo.contractStart, userInfo.contractEnd]);
+            React.useEffect(() => { calculate(); }, [dates, baseInfo, userInfo.contractStart, userInfo.contractEnd]);
 
             return (
-                <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
-                    <div className="max-w-[1400px] mx-auto p-4 md:p-8 space-y-8">
+                <div className="min-h-screen pb-20">
+                    <div className="max-w-[1200px] mx-auto p-4 md:p-8 space-y-8">
+                        
                         {/* Header */}
-                        <div className="bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 bg-indigo-600 rounded-xl text-white shadow-lg"><Icon name={ReceiptText} size={24} /></div>
+                                <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-lg"><Icon name={ReceiptText} size={24} /></div>
                                 <div>
-                                    <h1 className="text-xl font-black text-slate-800">시간제근무 기간제교사 인건비 산정</h1>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">2026.04.26 Current Config</p>
+                                    <h1 className="text-xl font-extrabold text-slate-800">시간제근무 기간제교사 인건비 산정</h1>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">2026.04.26 CURRENT CONFIGURATION</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">
@@ -163,100 +160,159 @@
                             </div>
                         </div>
 
-                        {/* Settings Grid */}
+                        {/* Config Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-200 overflow-hidden">
-                                <div className="bg-slate-900 px-8 py-4 text-white font-bold flex items-center gap-2">
-                                    <Icon name={Settings2} size={18} className="text-indigo-400" /> 근무 설정
+                            <div className="lg:col-span-2 bg-white rounded-[2.5rem] shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="bg-slate-900 px-8 py-5 text-white font-bold flex items-center gap-2">
+                                    <Icon name={Settings2} size={18} className="text-indigo-400" /> 근무 및 방학 설정
                                 </div>
                                 <div className="p-8 space-y-8">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase">학교명</label>
-                                            <input type="text" value={userInfo.affiliation} onChange={e => setUserInfo({...userInfo, affiliation: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold" />
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">소속</label>
+                                            <input type="text" placeholder="학교/유치원명" value={userInfo.affiliation} onChange={e => setUserInfo({...userInfo, affiliation: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase">교사 성명</label>
-                                            <input type="text" value={userInfo.name} onChange={e => setUserInfo({...userInfo, name: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold" />
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">성명</label>
+                                            <input type="text" placeholder="교사명" value={userInfo.name} onChange={e => setUserInfo({...userInfo, name: e.target.value})} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         </div>
                                     </div>
-                                    <div className="pt-6 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
-                                            <span className="text-[11px] font-black text-indigo-500 block mb-3 uppercase">여름 방학 (8시간)</span>
-                                            <div className="flex gap-2">
-                                                <input type="date" value={dates.summerStart} onChange={e => setDates({...dates, summerStart: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200" />
-                                                <input type="date" value={dates.summerEnd} onChange={e => setDates({...dates, summerEnd: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200" />
+
+                                    {/* 복구된 방학 설정란 */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                                        <div className="space-y-4">
+                                            <div className="p-5 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                                <span className="text-[11px] font-black text-indigo-600 block mb-3 uppercase tracking-tighter">여름 방학 (8시간 근무)</span>
+                                                <div className="flex gap-2">
+                                                    <input type="date" value={dates.summerStart} onChange={e => setDates({...dates, summerStart: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                    <input type="date" value={dates.summerEnd} onChange={e => setDates({...dates, summerEnd: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                </div>
+                                            </div>
+                                            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
+                                                <span className="text-[11px] font-black text-slate-500 block mb-3 uppercase tracking-tighter">여름방학 미운영 기간 (4시간 근무)</span>
+                                                <div className="flex gap-2">
+                                                    <input type="date" value={dates.summerNonOpStart} onChange={e => setDates({...dates, summerNonOpStart: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                    <input type="date" value={dates.summerNonOpEnd} onChange={e => setDates({...dates, summerNonOpEnd: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                                            <span className="text-[11px] font-black text-blue-500 block mb-3 uppercase">겨울 방학 (8시간)</span>
-                                            <div className="flex gap-2">
-                                                <input type="date" value={dates.winterStart} onChange={e => setDates({...dates, winterStart: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200" />
-                                                <input type="date" value={dates.winterEnd} onChange={e => setDates({...dates, winterEnd: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200" />
+                                        <div className="space-y-4">
+                                            <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                                                <span className="text-[11px] font-black text-blue-600 block mb-3 uppercase tracking-tighter">겨울 방학 (8시간 근무)</span>
+                                                <div className="flex gap-2">
+                                                    <input type="date" value={dates.winterStart} onChange={e => setDates({...dates, winterStart: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                    <input type="date" value={dates.winterEnd} onChange={e => setDates({...dates, winterEnd: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                </div>
+                                            </div>
+                                            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
+                                                <span className="text-[11px] font-black text-slate-500 block mb-3 uppercase tracking-tighter">겨울방학 미운영 기간 (4시간 근무)</span>
+                                                <div className="flex gap-2">
+                                                    <input type="date" value={dates.winterNonOpStart} onChange={e => setDates({...dates, winterNonOpStart: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                    <input type="date" value={dates.winterNonOpEnd} onChange={e => setDates({...dates, winterNonOpEnd: e.target.value})} className="flex-1 text-xs p-2.5 rounded-lg border border-slate-200 bg-white font-bold" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* 복구된 휴업일 설정란 */}
+                                    <div className="pt-4 border-t border-slate-100">
+                                        <label className="text-[11px] font-black text-rose-500 mb-3 block uppercase">임시공휴일 / 재량휴업일 (0시간 근무)</label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="relative">
+                                                <Icon name={CalendarRange} size={16} className="absolute left-3 top-3.5 text-slate-300" />
+                                                <input type="date" value={dates.extraHoliday1} onChange={e => setDates({...dates, extraHoliday1: e.target.value})} className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" />
+                                            </div>
+                                            <div className="relative">
+                                                <Icon name={CalendarRange} size={16} className="absolute left-3 top-3.5 text-slate-300" />
+                                                <input type="date" value={dates.extraHoliday2} onChange={e => setDates({...dates, extraHoliday2: e.target.value})} className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 space-y-6">
-                                <div className="flex items-center gap-2 border-b pb-4"><Icon name={CreditCard} size={20} className="text-indigo-600" /><h3 className="font-bold">급여 기준</h3></div>
-                                <div className="space-y-4">
-                                    <div className="bg-indigo-600 p-4 rounded-xl text-white">
-                                        <label className="text-[10px] font-bold opacity-70 block mb-2">계약 기간</label>
-                                        <input type="date" value={userInfo.contractStart} onChange={e => setUserInfo({...userInfo, contractStart: e.target.value})} className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-xs mb-2" />
-                                        <input type="date" value={userInfo.contractEnd} onChange={e => setUserInfo({...userInfo, contractEnd: e.target.value})} className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-xs" />
+                            {/* Salary Sidebar */}
+                            <div className="space-y-6">
+                                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-200 space-y-6">
+                                    <div className="flex items-center gap-2 border-b pb-4 text-slate-800"><Icon name={CreditCard} size={20} className="text-indigo-600" /><h3 className="font-bold">지급 기준 설정</h3></div>
+                                    <div className="space-y-5">
+                                        <div className="bg-indigo-600 p-5 rounded-2xl text-white shadow-md">
+                                            <label className="text-[10px] font-black opacity-70 block mb-2 uppercase">계약 전체 기간</label>
+                                            <div className="space-y-2">
+                                                <input type="date" value={userInfo.contractStart} onChange={e => setUserInfo({...userInfo, contractStart: e.target.value})} className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-xs font-bold focus:bg-white/20 outline-none transition-all" />
+                                                <input type="date" value={userInfo.contractEnd} onChange={e => setUserInfo({...userInfo, contractEnd: e.target.value})} className="w-full bg-white/10 border border-white/20 rounded-lg p-2 text-xs font-bold focus:bg-white/20 outline-none transition-all" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1">나의 호봉</label>
+                                            <div className="relative">
+                                                <select value={baseInfo.hobong} onChange={e => setBaseInfo({...baseInfo, hobong: parseInt(e.target.value), salary: salaryTable[e.target.value]})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-black text-slate-700 appearance-none focus:ring-2 focus:ring-indigo-500 outline-none">
+                                                    {Object.keys(salaryTable).map(h => <option key={h} value={h}>{h}호봉 ({salaryTable[h].toLocaleString()}원)</option>)}
+                                                </select>
+                                                <Icon name={ChevronDown} className="absolute right-4 top-5 text-slate-400 pointer-events-none" size={16} />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[10px] font-black text-slate-400">호봉 선택</label>
-                                        <select value={baseInfo.hobong} onChange={e => handleHobongChange(parseInt(e.target.value))} className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold appearance-none">
-                                            {Object.keys(salaryTable).map(h => <option key={h} value={h}>{h}호봉 ({salaryTable[h].toLocaleString()}원)</option>)}
-                                        </select>
-                                    </div>
+                                </div>
+                                <div className="bg-slate-900 p-6 rounded-[2rem] text-white/90">
+                                    <div className="flex items-center gap-2 mb-4 text-indigo-400 font-bold"><Icon name={Info} size={16}/> 산정 원칙</div>
+                                    <ul className="text-[11px] space-y-3 leading-relaxed opacity-80">
+                                        <li className="flex gap-2 font-medium"><span className="text-indigo-400 font-bold">1</span> <b>학기중/미운영:</b> 본봉의 50% (4시간) 비례 산출</li>
+                                        <li className="flex gap-2 font-medium"><span className="text-indigo-400 font-bold">2</span> <b>방학중:</b> 본봉의 100% (8시간) 비례 산출</li>
+                                        <li className="flex gap-2 font-medium"><span className="text-indigo-400 font-bold">3</span> <b>수당:</b> 모든 수당(교직, 연구 등) 근무시간 비례</li>
+                                    </ul>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Summary Table */}
-                        <div className="bg-white rounded-[2rem] shadow-xl border border-slate-200 overflow-hidden">
-                            <div className="p-6 border-b bg-slate-50 flex items-center gap-2"><Icon name={Table} size={20} className="text-indigo-600" /><h3 className="font-bold">연간 인건비 소요액 신청 현황</h3></div>
+                        {/* Annual Summary Table */}
+                        <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
+                            <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2.5 bg-indigo-600 rounded-xl text-white"><Icon name={Table} size={20} /></div>
+                                    <h3 className="font-black text-slate-800 tracking-tight">연간 인건비 소요액 신청 현황</h3>
+                                </div>
+                            </div>
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left border-collapse min-w-[1000px]">
                                     <thead>
-                                        <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-tighter">
-                                            <th className="p-4 border-b">구분</th>
-                                            <th className="p-4 text-right border-b">본봉</th>
-                                            <th className="p-4 text-right border-b">교직수당</th>
-                                            <th className="p-4 text-right border-b">연구비</th>
-                                            <th className="p-4 text-right border-b text-indigo-600">정근가산금</th>
-                                            <th className="p-4 text-right border-b">급식비</th>
-                                            <th className="p-4 text-right border-b text-orange-600">명절휴가비</th>
-                                            <th className="p-4 text-right border-b font-black text-slate-900 bg-slate-100/50">분기총계</th>
+                                        <tr className="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b">
+                                            <th className="p-4 text-center">구분</th>
+                                            <th className="p-4 text-right">본봉</th>
+                                            <th className="p-4 text-right">교직수당</th>
+                                            <th className="p-4 text-right">연구비</th>
+                                            <th className="p-4 text-right text-indigo-600">정근가산금</th>
+                                            <th className="p-4 text-right">정액급식비</th>
+                                            <th className="p-4 text-right text-rose-500">명절휴가비</th>
+                                            <th className="p-4 text-right">보험료(기관)</th>
+                                            <th className="p-4 text-right font-black text-slate-900 bg-slate-100/50">분기총계</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
                                         {results.map(res => (
-                                            <tr key={res.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="p-4 font-black text-slate-700 text-sm">{res.name}</td>
-                                                <td className="p-4 text-right font-mono text-xs">{Math.round(res.basic).toLocaleString()}</td>
-                                                <td className="p-4 text-right font-mono text-xs">{Math.round(res.teaching).toLocaleString()}</td>
-                                                <td className="p-4 text-right font-mono text-xs">{Math.round(res.research).toLocaleString()}</td>
-                                                <td className="p-4 text-right font-mono font-black text-indigo-600">{Math.round(res.jeonggeun + res.jeonggeunAdd).toLocaleString()}</td>
-                                                <td className="p-4 text-right font-mono text-xs">{Math.round(res.meal).toLocaleString()}</td>
-                                                <td className="p-4 text-right font-mono font-black text-orange-600">{Math.round(res.holiday).toLocaleString()}</td>
-                                                <td className="p-4 text-right font-mono font-black bg-slate-100/30">{Math.round(res.total).toLocaleString()}</td>
+                                            <tr key={res.id} className="hover:bg-slate-50/80 transition-colors">
+                                                <td className="p-4 font-black text-slate-700 bg-slate-50/30 text-center">{res.name}</td>
+                                                <td className="p-4 text-right font-mono font-bold text-slate-600">{Math.round(res.basic).toLocaleString()}</td>
+                                                <td className="p-4 text-right font-mono font-bold text-slate-600">{Math.round(res.teaching).toLocaleString()}</td>
+                                                <td className="p-4 text-right font-mono font-bold text-slate-600">{Math.round(res.research).toLocaleString()}</td>
+                                                <td className="p-4 text-right font-mono font-black text-indigo-600">{(Math.round(res.jeonggeun) + Math.round(res.jeonggeunAdd)).toLocaleString()}</td>
+                                                <td className="p-4 text-right font-mono font-bold text-slate-600">{Math.round(res.meal).toLocaleString()}</td>
+                                                <td className="p-4 text-right font-mono font-black text-rose-500">{Math.round(res.holiday).toLocaleString()}</td>
+                                                <td className="p-4 text-right font-mono font-bold text-slate-400 text-xs">{Math.round(res.insurance).toLocaleString()}</td>
+                                                <td className="p-4 text-right font-mono font-black bg-slate-100/30 text-indigo-900">{Math.round(res.total).toLocaleString()}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                     <tfoot className="bg-slate-900 text-white font-black">
                                         <tr>
-                                            <td className="p-5 text-center text-xs">연간 총계</td>
+                                            <td className="p-5 text-center text-xs uppercase opacity-70">연간 총계</td>
                                             <td className="p-5 text-right font-mono text-xs">{Math.round(results.reduce((s, r) => s + r.basic, 0)).toLocaleString()}</td>
                                             <td className="p-5 text-right font-mono text-xs">{Math.round(results.reduce((s, r) => s + r.teaching, 0)).toLocaleString()}</td>
                                             <td className="p-5 text-right font-mono text-xs">{Math.round(results.reduce((s, r) => s + r.research, 0)).toLocaleString()}</td>
                                             <td className="p-5 text-right font-mono text-xs">{Math.round(results.reduce((s, r) => s + r.jeonggeun + r.jeonggeunAdd, 0)).toLocaleString()}</td>
                                             <td className="p-5 text-right font-mono text-xs">{Math.round(results.reduce((s, r) => s + r.meal, 0)).toLocaleString()}</td>
                                             <td className="p-5 text-right font-mono text-xs">{Math.round(results.reduce((s, r) => s + r.holiday, 0)).toLocaleString()}</td>
+                                            <td className="p-5 text-right font-mono text-[10px] opacity-50 font-normal">{Math.round(results.reduce((s, r) => s + r.insurance, 0)).toLocaleString()}</td>
                                             <td className="p-5 text-right font-mono text-lg text-yellow-400 border-l border-white/10">{Math.round(results.reduce((s, r) => s + r.total, 0)).toLocaleString()}</td>
                                         </tr>
                                     </tfoot>
@@ -264,28 +320,108 @@
                             </div>
                         </div>
 
-                        {/* Logs */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {detailedLogs.map((log, idx) => (
-                                <div key={idx} className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col border-t-4 border-t-indigo-600">
-                                    <div className="p-5 bg-slate-50 border-b flex justify-between items-center">
-                                        <h4 className="text-xl font-black text-slate-800">{log.month}월분</h4>
-                                        <div className="text-[10px] font-bold text-slate-400">8H:{log.fullWorkDays} / 4H:{log.halfWorkDays}</div>
+                        {/* Detailed Logs with Calculation Formulas */}
+                        <div className="space-y-6 pt-10">
+                            <div className="flex items-center gap-3 px-4">
+                                <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600"><Icon name={ClipboardList} size={20} /></div>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">월별 상세 산출 기초 (급여 명세 로그)</h2>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                {detailedLogs.map((log, idx) => (
+                                    <div key={idx} className="bg-white rounded-[2rem] shadow-md border border-slate-200 overflow-hidden flex flex-col hover:shadow-lg transition-all border-t-4 border-t-indigo-600">
+                                        <div className="p-6 bg-slate-50 border-b flex justify-between items-end">
+                                            <div>
+                                                <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest block mb-1">월별 급여 기록</span>
+                                                <h4 className="text-2xl font-black text-slate-800">{log.month}월분</h4>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[10px] font-bold text-slate-400 block mb-1 font-mono">DAYS: {log.totalDays}d</span>
+                                                <span className="text-[11px] font-black px-3 py-1 bg-white rounded-full border border-slate-200 shadow-sm inline-flex items-center gap-2">
+                                                    <span className="text-indigo-600">8H:{log.fullWorkDays}</span> / <span className="text-blue-500">4H:{log.halfWorkDays}</span> / <span className="text-rose-400">0H:{log.noWorkDays}</span>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="p-8 flex-1 space-y-6">
+                                            <div className="space-y-5">
+                                                {/* 본봉 계산식 */}
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="font-bold text-slate-600 italic">1. 본봉(비례)</span>
+                                                        <span className="font-black font-mono text-slate-900">{Math.round(log.mBasic).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="p-3 bg-indigo-50/30 rounded-xl text-[10px] font-medium text-slate-500 font-mono leading-relaxed border border-indigo-100/30">
+                                                        <div className="text-indigo-600 font-bold mb-1">CALC:</div>
+                                                        {log.calcDetail}
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* 수당 항목들 */}
+                                                <div className="space-y-3 pt-2">
+                                                    {[
+                                                        { label: '2. 교직수당', val: log.mTeaching, base: baseInfo.teachingAllowance },
+                                                        { label: '3. 교원연구비', val: log.mResearch, base: baseInfo.researchAllowance },
+                                                        { label: '4. 정근수당가산금', val: log.mJeonggeunAdd, base: baseInfo.jeonggeunAdd },
+                                                        { label: '5. 정액급식비', val: baseInfo.mealAllowance, isFixed: true }
+                                                    ].map((item, i) => (
+                                                        <div key={i} className="group">
+                                                            <div className="flex justify-between items-center text-sm mb-1">
+                                                                <span className="font-bold text-slate-600">{item.label}</span>
+                                                                <span className="font-black font-mono">{Math.round(item.val).toLocaleString()}</span>
+                                                            </div>
+                                                            {!item.isFixed && (
+                                                                <div className="text-[9px] text-slate-400 pl-3 border-l-2 border-slate-100 font-mono">
+                                                                    ({item.base.toLocaleString()} / {log.totalDays}) × ({log.fullWorkDays}×1.0 + {log.halfWorkDays}×0.5)
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* 특별 지급 항목 (정근수당, 명절휴가비) */}
+                                                {(log.mJeonggeun > 0 || log.mHoliday > 0) && (
+                                                    <div className="pt-4 border-t border-slate-100 space-y-3">
+                                                        {log.mJeonggeun > 0 && (
+                                                            <div className="flex justify-between items-center text-sm text-indigo-600 font-black">
+                                                                <span>6. 정근수당 (본봉 50%의 50%)</span>
+                                                                <span className="font-mono">{Math.round(log.mJeonggeun).toLocaleString()}</span>
+                                                            </div>
+                                                        )}
+                                                        {log.mHoliday > 0 && (
+                                                            <div className="flex justify-between items-center text-sm text-rose-500 font-black">
+                                                                <span>7. 명절휴가비 (본봉 60%의 50%)</span>
+                                                                <span className="font-mono">{Math.round(log.mHoliday).toLocaleString()}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="p-8 bg-slate-900 text-white">
+                                            <div className="flex justify-between items-center mb-3 opacity-50 text-[10px] font-black tracking-widest">
+                                                <span>지급 총액 (세전)</span>
+                                                <span>예상 실수령액 (세후)</span>
+                                            </div>
+                                            <div className="flex justify-between items-end">
+                                                <div className="text-base font-bold font-mono">{Math.round(log.mTotalPreTax).toLocaleString()}원</div>
+                                                <div className="text-2xl font-black font-mono text-emerald-400">{Math.round(log.mNetPay).toLocaleString()}원</div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="p-6 flex-1 space-y-3 text-sm font-bold text-slate-600">
-                                        <div className="flex justify-between"><span>본봉(비례)</span><span className="text-slate-900">{Math.round(log.mBasic).toLocaleString()}</span></div>
-                                        <div className="flex justify-between"><span>교직수당</span><span className="text-slate-900">{Math.round(log.mTeaching).toLocaleString()}</span></div>
-                                        <div className="flex justify-between"><span>연구비</span><span className="text-slate-900">{Math.round(log.mResearch).toLocaleString()}</span></div>
-                                        <div className="flex justify-between"><span>급식비</span><span className="text-slate-900">{baseInfo.mealAllowance.toLocaleString()}</span></div>
-                                        {log.mJeonggeun > 0 && <div className="flex justify-between text-indigo-600"><span>정근수당</span><span>{Math.round(log.mJeonggeun).toLocaleString()}</span></div>}
-                                        {log.mHoliday > 0 && <div className="flex justify-between text-orange-600"><span>명절휴가비</span><span>{Math.round(log.mHoliday).toLocaleString()}</span></div>}
-                                    </div>
-                                    <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
-                                        <span className="text-[10px] font-black opacity-50 uppercase">예상 실수령</span>
-                                        <span className="text-xl font-black text-emerald-400 font-mono">{Math.round(log.mNetPay).toLocaleString()}원</span>
-                                    </div>
-                                </div>
-                            ))}
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap items-center justify-center gap-4 bg-white p-10 rounded-[3rem] shadow-sm border border-slate-200">
+                            <button className="flex items-center gap-2 px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-indigo-100">
+                                <Icon name={Save} /> 인적사항 저장 (.json)
+                            </button>
+                            <button className="flex items-center gap-2 px-8 py-4 bg-slate-800 hover:bg-slate-900 text-white font-black rounded-2xl transition-all shadow-lg shadow-slate-100">
+                                <Icon name={FileUp} /> 파일 불러오기
+                            </button>
+                            <button className="flex items-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl transition-all shadow-lg shadow-emerald-100">
+                                <Icon name={FileSpreadsheet} /> 엑셀 다운로드
+                            </button>
                         </div>
                     </div>
                 </div>
